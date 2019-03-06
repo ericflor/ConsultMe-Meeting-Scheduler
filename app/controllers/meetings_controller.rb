@@ -1,6 +1,7 @@
 class MeetingsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_meeting, only: [:show, :edit, :update, :destroy]
+  before_action :must_be_admin, only: [:active_sessions]
 
   # GET /meetings
   # GET /meetings.json
@@ -42,7 +43,7 @@ class MeetingsController < ApplicationController
     charge = Stripe::Charge.create(
       amount: 19900,
       currency: "usd",
-      description: "Event Scheduler",
+      description: "ConsultMe",
       source: token
     )
 
@@ -57,6 +58,7 @@ class MeetingsController < ApplicationController
       if @meeting.save
         format.html { redirect_to @meeting, notice: 'Meeting was successfully created.' }
         format.json { render :show, status: :created, location: @meeting }
+        MeetingMailer.with(meeting: @meeting, user: current_user).meeting_scheduled.deliver_later
       else
         format.html { render :new }
         format.json { render json: @meeting.errors, status: :unprocessable_entity }
@@ -94,10 +96,20 @@ class MeetingsController < ApplicationController
     end
   end
 
+  def active_sessions
+    @active_sessions = Meeting.where("end_time > ?", Time.now)
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_meeting
       @meeting = Meeting.find(params[:id])
+    end
+
+    def must_be_admin
+      unless current_user.admin?
+        redirect_to meetings_path, alert: "You don't have access to this page"
+      end
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.

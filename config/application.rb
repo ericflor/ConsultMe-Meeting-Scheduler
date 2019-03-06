@@ -9,7 +9,7 @@ Bundler.require(*Rails.groups)
 module EventScheduler
   class Application < Rails::Application
     config.active_job.queue_adapter = :sidekiq
-    config.application_name = 'Event Scheduler'
+    config.application_name = 'ConsultMe'
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 5.2
 
